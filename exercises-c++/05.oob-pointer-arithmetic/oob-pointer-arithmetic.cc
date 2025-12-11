@@ -3,7 +3,7 @@
 #include <compartment.h>
 #include <debug.hh>
 #include <unwind.h>
-#include <fail-simulator-on-error.h>
+// REMOVED: #include <fail-simulator-on-error.h>
 
 using Debug = ConditionalDebug<true, "OOB Pointer Arithmetic Compartment">;
 
@@ -14,7 +14,16 @@ int __cheri_compartment("oob-pointer-arithmetic") vuln1()
     Debug::log("Array base: {}", static_cast<int*>(arr));
     int* p = arr + 10;
     Debug::log("Pointer moved to arr + 10: {}", static_cast<int*>(p));
-    int val = *p;
-    Debug::log("Read value: {} (this should not be printed)", val);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        int val = *p;
+        Debug::log("Read value: {} (this should not be printed)", val);
+    } CHERIOT_HANDLER {
+        Debug::log("Error detected: OOB Pointer Arithmetic (C++)!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
+    
     return 0;
 }

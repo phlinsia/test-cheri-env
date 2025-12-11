@@ -21,7 +21,16 @@ __cheri_compartment("type-confusion") int vuln1(void)
 
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Before inc_long_ptr: lp.ptr = {}", (char*)lp.ptr);
     inc_long_ptr(&lp);
-    CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "After inc_long_ptr: lp.ptr = {}", (char*)lp.ptr);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        // Printing lp.ptr will try to dereference it. Since it's corrupted, it causes a fault.
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "After inc_long_ptr: lp.ptr = {}", (char*)lp.ptr);
+    } CHERIOT_HANDLER {
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Error detected: Type confusion (pointer corrupted)!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
 
     return 0;
 }

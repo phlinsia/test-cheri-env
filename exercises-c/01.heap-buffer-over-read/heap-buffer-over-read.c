@@ -21,8 +21,17 @@ __cheri_compartment("heap-buffer-over-read") int vuln1()
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Testing Buffer Over-read (C)...");
 
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Accessing arr[10]... ");
-    int value = arr[10]; 
-    CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Value: {} (This should not be printed)", value);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        int value = arr[10]; 
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Value: {} (This should not be printed)", value);
+    } CHERIOT_HANDLER {
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Error detected: Heap buffer over-read!");
+        free(arr); // Clean up resource before returning error
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
 
     free(arr);
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "This line may not be reached if the program crashes.");

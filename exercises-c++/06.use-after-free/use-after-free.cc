@@ -3,7 +3,7 @@
 #include <compartment.h>
 #include <debug.hh>
 #include <unwind.h>
-#include <fail-simulator-on-error.h>
+// REMOVED: #include <fail-simulator-on-error.h>
 
 using Debug = ConditionalDebug<true, "Use After Free Compartment">;
 
@@ -21,7 +21,16 @@ int __cheri_compartment("use-after-free") vuln1()
     Debug::log("ptr points to memory with value: {}", *ptr);
     delete ptr;
     Debug::log("Memory has been freed.");
-    *ptr = 456;
-    Debug::log("Value is now: {} (this should not be printed)", *ptr);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        *ptr = 456;
+        Debug::log("Value is now: {} (this should not be printed)", *ptr);
+    } CHERIOT_HANDLER {
+        Debug::log("Error detected: Use After Free (C++)!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
+
     return 0;
 }

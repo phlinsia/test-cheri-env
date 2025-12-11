@@ -1,11 +1,7 @@
-// Copyright Microsoft and CHERIoT Contributors.
-// SPDX-License-Identifier: MIT
-
-
 #include <compartment.h>
 #include <debug.hh>
 #include <unwind.h>
-#include <fail-simulator-on-error.h>
+// REMOVED: #include <fail-simulator-on-error.h>
 
 /// Expose debugging features unconditionally for this compartment.
 using Debug = ConditionalDebug<true, "Heap Buffer Over Read Compartment">;
@@ -26,8 +22,18 @@ int __cheri_compartment("heap-buffer-over-read") vuln1()
     arr[1] = 20;
     arr[2] = 30;
     Debug::log("Accessing arr[10] (out-of-bounds)...");
-    int value = arr[10]; // Should fault
-    Debug::log("Value: {} (This should not be printed)", value);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        int value = arr[10]; // Should fault
+        Debug::log("Value: {} (This should not be printed)", value);
+    } CHERIOT_HANDLER {
+        Debug::log("Error detected: Heap buffer over-read (C++)!");
+        delete[] arr;
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
+
     delete[] arr;
     Debug::log("Completed without crashing (unexpected)");
     return 0;

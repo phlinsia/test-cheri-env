@@ -17,9 +17,17 @@ __cheri_compartment("heap-buffer-under-write") int vuln1(void)
     arr[0] = 10; arr[1] = 20; arr[2] = 30;
 
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Attempting under-write arr[-1] = 999 ...");
-    arr[-1] = 999; // write before start of allocation (under-write)
-
-    CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "arr[-1]: {} (this should not be printed).", arr[-1]);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        arr[-1] = 999; // write before start of allocation (under-write)
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "arr[-1]: {} (this should not be printed).", arr[-1]);
+    } CHERIOT_HANDLER {
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Error detected: Heap buffer under-write!");
+        free(arr);
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
 
     free(arr);
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Freed array (if we reached here).");

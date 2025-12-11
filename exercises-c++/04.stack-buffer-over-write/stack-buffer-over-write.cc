@@ -1,10 +1,8 @@
-// Copyright Microsoft and CHERIoT Contributors.
-// SPDX-License-Identifier: MIT
 #include <compartment.h>
 #include <debug.hh>
 #include <assert.h>
 #include <unwind.h>
-#include <fail-simulator-on-error.h>
+// REMOVED: #include <fail-simulator-on-error.h>
 
 using Debug = ConditionalDebug<true, "Stack Buffer Over Write Compartment">;
 
@@ -27,7 +25,16 @@ int __cheri_compartment("stack-buffer-over-write") vuln1()
     assert((uintptr_t)upper == (uintptr_t)&lower[sizeof(lower)]);
     upper[0] = 'a';
     Debug::log("upper[0] = {}", upper[0]);
-    write_buf(lower, sizeof(lower));
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        write_buf(lower, sizeof(lower));
+    } CHERIOT_HANDLER {
+        Debug::log("Error detected: Stack buffer over-write (C++)!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
+
     Debug::log("upper[0] = {}", upper[0]);
     return 0;
 }

@@ -3,7 +3,7 @@
 #include <compartment.h>
 #include <debug.hh>
 #include <unwind.h>
-#include <fail-simulator-on-error.h>
+// REMOVED: #include <fail-simulator-on-error.h>
 
 using Debug = ConditionalDebug<true, "Type Confusion Compartment">;
 
@@ -23,6 +23,16 @@ int __cheri_compartment("type-confusion") vuln1()
     Debug::log("Testing Type confusion (C++)...");
     Debug::log("Before inc_long_ptr: lp.ptr = {}", lp.ptr);
     inc_long_ptr(&lp);
-    Debug::log("After inc_long_ptr: lp.ptr = {}", lp.ptr);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        // This log tries to print a corrupted pointer, causing a fault.
+        Debug::log("After inc_long_ptr: lp.ptr = {}", lp.ptr);
+    } CHERIOT_HANDLER {
+        Debug::log("Error detected: Type confusion (C++)!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
+
     return 0;
 }

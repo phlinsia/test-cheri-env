@@ -31,7 +31,14 @@ __cheri_compartment("stack-buffer-over-write") int vuln1(void)
     upper[0] = 'a';
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "upper[0] = {}", upper[0]);
 
-    write_buf(lower, sizeof(lower));
+    // START MODIFICATION
+    CHERIOT_DURING {
+        write_buf(lower, sizeof(lower)); // This call will trigger the fault inside the function
+    } CHERIOT_HANDLER {
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Error detected: Stack buffer over-write!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
 
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "upper[0] = {}", upper[0]);
 

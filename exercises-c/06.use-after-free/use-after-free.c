@@ -1,6 +1,3 @@
-// Copyright Microsoft and CHERIoT Contributors.
-// SPDX-License-Identifier: MIT
-
 #include <compartment.h>
 #include <debug.h>
 #include <unwind.h>
@@ -22,8 +19,16 @@ __cheri_compartment("use-after-free") int vuln1()
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Memory has been freed.");
 
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Attempting to dereference dangling pointer... ");
-    *ptr = 456;
-    CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Value is now: {}", *ptr);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        *ptr = 456;
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Value is now: {}", *ptr);
+    } CHERIOT_HANDLER {
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Error detected: Use After Free!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
 
     return 0;
 }

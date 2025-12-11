@@ -1,6 +1,3 @@
-// Copyright Microsoft and CHERIoT Contributors.
-// SPDX-License-Identifier: MIT
-
 #include <compartment.h>
 #include <debug.h>
 #include <unwind.h>
@@ -18,8 +15,16 @@ __cheri_compartment("oob-pointer-arithmetic") int vuln1(void)
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Pointer moved to arr + 10: {}", (uintptr_t)p);
 
     CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Dereferencing OOB pointer ...");
-    int val = *p; // out-of-bounds read (or write) via pointer arithmetic
-    CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Read value: {} (this should not be printed)", val);
+    
+    // START MODIFICATION
+    CHERIOT_DURING {
+        int val = *p; // out-of-bounds read via pointer arithmetic
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Read value: {} (this should not be printed)", val);
+    } CHERIOT_HANDLER {
+        CHERIOT_DEBUG_LOG(DEBUG_CONTEXT, "Error detected: OOB Pointer Arithmetic!");
+        return -1;
+    } CHERIOT_END_HANDLER
+    // END MODIFICATION
 
     return 0;
 }
